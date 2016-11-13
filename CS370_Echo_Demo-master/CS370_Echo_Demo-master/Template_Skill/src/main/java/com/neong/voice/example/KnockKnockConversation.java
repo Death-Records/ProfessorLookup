@@ -65,6 +65,9 @@ public class KnockKnockConversation extends Conversation {
 	private final static String INTENT_HELP = "HelpIntent";
 	private final static String INTENT_TELLJOKE = "IntentTellJoke";
 	private final static String INTENT_LOCATION = "locationIntent";
+	private final static String INTENT_AMB_PHONE_NUMBER = "AmbPhoneIntent"; //want phone from ambiguous prof
+	private final static String INTENT_AMB_EMAIL_ADDRESS = "AmbEmailIntent"; //want email from amb prof
+	private final static String INTENT_AMB_LOCATION = "AmbLocationIntent"; //want location of amb prof	
 
 	//State keys 
 	private final static Integer STATE_GET_PROFESSOR = 2;
@@ -74,6 +77,7 @@ public class KnockKnockConversation extends Conversation {
 	private final static Integer STATE_AMBIGUOUS_PROF = 6;
 	private final static Integer STATE_GET_JOKE = 7;
 	private final static Integer STATE_GET_LOCATION = 8;
+	private final static Integer STATE_MORE_INFO = 9;
 
 	//Session state storage key
 	private final static String SESSION_PROF_STATE = "profState";
@@ -97,7 +101,9 @@ public class KnockKnockConversation extends Conversation {
 		supportedIntentNames.add(INTENT_HELP);
 		supportedIntentNames.add(INTENT_TELLJOKE);
 		supportedIntentNames.add(INTENT_LOCATION);
-
+		supportedIntentNames.add(INTENT_AMB_PHONE_NUMBER);
+		supportedIntentNames.add(INTENT_AMB_EMAIL_ADDRESS);
+		supportedIntentNames.add(INTENT_AMB_LOCATION);
 	}
 
 	//TOD: (done) Set cachedList to null wherever the conversation ends.
@@ -173,6 +179,15 @@ public class KnockKnockConversation extends Conversation {
 		else if(INTENT_TELLJOKE.equals(intentName)){
 			response = handleJokeIntent(intentReq, session);
 		}
+		else if(INTENT_AMB_PHONE_NUMBER.equals(intentName)){
+			//TODO
+		}
+		else if(INTENT_AMB_EMAIL_ADDRESS.equals(intentName)){
+			//TODO
+		}
+		else if(INTENT_AMB_LOCATION.equals(intentName)){
+			//TODO
+		}
 		else {
 			response = newTellResponse("<speak> Whatchu talkin' bout! </speak>", true);
 			cachedList = null;
@@ -232,43 +247,22 @@ public class KnockKnockConversation extends Conversation {
 		ProfContact pc = new ProfContact();
 		pc = cachedList.get(0);
 		if (STATE_GET_EMAIL.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
-			//We last gave email, so its time to give phone
-			if(pc.getPhone() == null || pc.getPhone().isEmpty()){ // checking if we have phone
-				String name = pc.getName();
-				response = newTellResponse("<speak>I'm sorry, I don't have any more contact info for " + name + ". </speak>", true);
-				cachedList = null;
-			}
-			else{
-				String name = pc.getName();
-				String phoneNum = pc.getPhone();
-				response = newAskResponse("<speak>" + name + "s phone number is " +  " <say-as interpret-as=\"telephone\">" + phoneNum + " </say-as>, would you like me to repeat that? </speak>", true, " <speak> would you like me to repeat their phone number? </speak>", true);
-				session.setAttribute(SESSION_PROF_STATE, STATE_GET_PHONE);
-			}
+			//We last gave email, so ask if they want phone or location
+			response = newAskResponse("<speak>Would you like " + pc.getName() + "'s phone number or location?</speak>" , true, "<speak>Say phone number, or say location</speak>", true);
 		}
 		else if (STATE_GET_PHONE.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
-			//We last gave phone, so its time to give email
-			if(pc.getEmail() == null || pc.getEmail().isEmpty()){ // checking if we have email
-				String name = pc.getName();
-				response = newTellResponse("<speak>I'm sorry, I don't have any more contact info for " + name + ". </speak>", true);
-				cachedList = null;
-
-			}
-			else{
-			String email = "";
-			for(char c: pc.getEmail().toCharArray() )
-				email += c + ',';
-			String name = pc.getName();
-			response = newAskResponse("<speak> " + name + "s email address is " + " <say-as interpret-as=\"spell-out\">" + email + "</say-as>, would you like me to repeat that?</speak>", true, " <speak> would you like me to repeat their email address?  You can say repeat, more information, or tell me a joke</speak>", true);
-			session.setAttribute(SESSION_PROF_STATE, STATE_GET_EMAIL);
-			}
+			//We last gave phone, so ask if they want email or location
+			response = newAskResponse("<speak>Would you like " + pc.getName() + "'s phone number or location?</speak>" , true, "<speak>Say phone number, or say location</speak>", true);	
 		}
 		else if (STATE_GET_LOCATION.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
-			//TODO
+			//We last gave location, so ask if they want email or phone
+			response = newAskResponse("<speak>Would you like " + pc.getName() + "'s phone number or location?</speak>" , true, "<speak>Say phone number, or say location</speak>", true);
 		}
 		else
+		{
 			response = newTellResponse("<speak> Peace out cub scout! </speak>", true);
-			cachedList = null;
-
+		}
+		session.setAttribute(SESSION_PROF_STATE_2, STATE_MORE_INFO);
 		return response;
 	}
 
