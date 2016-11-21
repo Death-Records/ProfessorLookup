@@ -1146,12 +1146,12 @@ public class KnockKnockConversation extends Conversation {
 			        	array += " " + foundUrl;
 
 			    }
-			    Parser parser = new Parser();
+			    //Parser parser = new Parser();
 			    
-			    parser.setUp(array);
-			    String relative_url = parser.findRelativeURL();
+			    //parser.setUp(array);
+			    //String relative_url = parser.findRelativeURL();
 
-				return newTellResponse(relative_url, false);
+				return newTellResponse(array, false);
 				//BufferedReader rd = new BufferedReader(doc);
 				//String line;
 				//while ((line = doc.) != null)
