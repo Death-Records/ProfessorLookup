@@ -74,6 +74,7 @@ public class KnockKnockConversation extends Conversation {
 	private final static String INTENT_AMB_PHONE = "AmbPhoneIntent"; // 17
 	private final static String INTENT_AMB_EMAIL = "AmbEmailIntent"; // 18
 	private final static String INTENT_RATEMYPROFESSOR = "RateMyProfessorIntent";
+	private final static String INTENT_PROFESSOR_CLASSES = "ProfessorClassesIntent";//TODO make sure right intent name.
 	
 	//State keys 
 	private final static Integer STATE_GET_PROFESSOR = 2;
@@ -84,7 +85,8 @@ public class KnockKnockConversation extends Conversation {
 	private final static Integer STATE_GET_JOKE = 7;
 	private final static Integer STATE_GET_LOCATION = 8;
 	private final static Integer STATE_SPECIFY_NEED = 9; //known professor, unknown desired info
-
+	private final static Integer STATE_GET_PROF_CLASSES = 10;
+			
 	//Session state storage key
 	private final static String SESSION_PROF_STATE = "profState";
 	private final static String SESSION_PROF_STATE_2 = "profState2"; //need it because in ambiguous state, still need to store email, phone, email_phone state
@@ -111,6 +113,7 @@ public class KnockKnockConversation extends Conversation {
 		supportedIntentNames.add(INTENT_AMB_PHONE);
 		supportedIntentNames.add(INTENT_AMB_EMAIL);
 		supportedIntentNames.add(INTENT_RATEMYPROFESSOR);
+		supportedIntentNames.add(INTENT_PROFESSOR_CLASSES);
 
 	}
 
@@ -212,6 +215,9 @@ public class KnockKnockConversation extends Conversation {
 			response = handleRateMyProfessor(intentReq, session);
 		}
 		//
+		else if(INTENT_PROFESSOR_CLASSES.equals(intentName)){
+			response = handleProfessorClassesIntent(intentReq,session);
+		}
 		else {
 			response = newTellResponse("<speak> Whatchu talkin' bout! </speak>", true);
 			cachedList = null;
@@ -854,6 +860,78 @@ public class KnockKnockConversation extends Conversation {
 		session.setAttribute(SESSION_PROF_STATE, STATE_GET_LOCATION);
 		return response;
 
+	}
+	
+	private SpeechletResponse ProfessorClassesIntentResponse(IntentRequest intentReq, Session session)
+	{//Should list class names
+		ProfContact pc = new ProfContact();
+		SpeechletResponse response = null;
+		pc = cachedList.get(0);
+		getClassesFromProf(pc);
+		// they have classes
+		if(classList.size() > 0)
+		{
+			String list ="";
+			int i = 0;
+			while(i < classList.size())
+			{
+				String s = classList.get(i).getClassName();
+				// if 
+				if(i == classList.size()-1)
+
+					list = list + " and " + s;
+				else
+					list = list + ", " + s;
+				i++;
+			}
+			response = newAskResponse("<speak> " + pc.getName() + " teaches " + list + " . Would you like me to repeat that or give you more info on " + pc.getName() + "? </speak>", true, "<speak>I didn't catch that, would you like me to repeat their classes or give you more info?</speak>", true);
+			session.setAttribute(SESSION_PROF_STATE, STATE_GET_PROF_CLASSES);
+		}
+		// they don't have classes
+		else
+		{
+			response = newAskResponse("<speak> " + pc.getName() + "doesn't seem to be teaching any classes at the moment" + " . Would you like me to give you more info on " + pc.getName() + " or tell a joke? </speak>", true, "<speak>I didn't catch that, would you like me to give you more info or tell a joke?</speak>", true);
+			session.setAttribute(SESSION_PROF_STATE, STATE_GET_PROF_CLASSES);
+		}
+		return response;
+	}
+	
+	private SpeechletResponse handleProfessorClassesIntent(IntentRequest intentReq, Session session)
+	{
+		Intent class_intent = intentReq.getIntent();
+		String professor_name = class_intent.getSlots().get("ProfessorName").getValue();
+		ProfContact pc = new ProfContact();
+		SpeechletResponse response = null;
+		
+		if(professor_name != null && !professor_name.isEmpty())
+			//we have prof name
+		{
+			try
+			{
+				GetEmailPhone(professor_name);
+			}
+			catch (ClassNotFoundException | SQLException e)
+			{	// TODO Auto-generated catch block
+				pc.setPhone(e.toString());
+			}
+		}
+		// will get a list of professors with building names
+		// narrow list down
+		if(cachedList.size() > 1)
+		{
+			String list = makeListOfDistinctProfessors(session);
+
+			session.setAttribute(SESSION_PROF_STATE, STATE_GET_PROF_CLASSES);
+			session.setAttribute(SESSION_PROF_STATE_2, STATE_AMBIGUOUS_PROF);
+			response = newAskResponse("<speak> Did you mean" + list + "say first name and last name  please </speak>", false, "<speak> Did you mean, " + list + "</speak>", false);
+		}
+		else
+		{
+
+			response = ProfessorClassesIntentResponse(intentReq, session);
+		}
+		session.setAttribute(SESSION_PROF_STATE, STATE_GET_PROF_CLASSES);
+		return response;
 	}
 
 	private SpeechletResponse handleJokeIntent(IntentRequest intentReq, Session session)
