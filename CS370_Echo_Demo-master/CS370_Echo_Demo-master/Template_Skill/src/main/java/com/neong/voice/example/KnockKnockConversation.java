@@ -112,6 +112,7 @@ public class KnockKnockConversation extends Conversation {
 		supportedIntentNames.add(INTENT_AMB_LOCATION);
 		supportedIntentNames.add(INTENT_AMB_PHONE);
 		supportedIntentNames.add(INTENT_AMB_EMAIL);
+		supportedIntentNames.add(INTENT_AMB_PROF_CLASSES);
 		supportedIntentNames.add(INTENT_RATEMYPROFESSOR);
 		supportedIntentNames.add(INTENT_PROFESSOR_CLASSES);
 
