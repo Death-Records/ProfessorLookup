@@ -59,7 +59,6 @@ public class KnockKnockConversation extends Conversation {
 	private final static String INTENT_CONTACTINFO = "ContactInformationIntent"; // 2
 	private final static String INTENT_PHONE_NUMBER = "ContactInformationPhoneIntent"; // 3
 	private final static String INTENT_EMAIL_ADDRESS = "ContactInformationEmailIntent"; // 4
-	private final static String INTENT_CLASSES = "ClassesTaughtIntent"; // 5
 	private final static String INTENT_COMBO = "ContactInformationComboIntent"; // 6
 	private final static String INTENT_CLARIFY_PROF = "ProfessorNameIntent"; // 7
 	private final static String INTENT_YES = "AMAZON.YesIntent"; // 8
@@ -73,8 +72,10 @@ public class KnockKnockConversation extends Conversation {
 	private final static String INTENT_AMB_LOCATION = "AmbLocationIntent"; // 16
 	private final static String INTENT_AMB_PHONE = "AmbPhoneIntent"; // 17
 	private final static String INTENT_AMB_EMAIL = "AmbEmailIntent"; // 18
+	private final static String INTENT_AMB_PROF_CLASSES = "AmbProfClassesIntent";
 	private final static String INTENT_RATEMYPROFESSOR = "RateMyProfessorIntent";
-	private final static String INTENT_PROFESSOR_CLASSES = "ProfessorClassesIntent";//TODO make sure right intent name.
+	private final static String INTENT_PROFESSOR_CLASSES = "ProfClassesIntent";
+	private final static String INTENT_DEPARTMENT_CLASSES = "DepartmentClassesIntent";
 	
 	//State keys 
 	private final static Integer STATE_GET_PROFESSOR = 2;
@@ -98,7 +99,6 @@ public class KnockKnockConversation extends Conversation {
 		supportedIntentNames.add(INTENT_CONTACTINFO);
 		supportedIntentNames.add(INTENT_PHONE_NUMBER);
 		supportedIntentNames.add(INTENT_EMAIL_ADDRESS);
-		supportedIntentNames.add(INTENT_CLASSES);
 		supportedIntentNames.add(INTENT_COMBO);
 		supportedIntentNames.add(INTENT_CLARIFY_PROF);
 		supportedIntentNames.add(INTENT_YES);
@@ -207,10 +207,6 @@ public class KnockKnockConversation extends Conversation {
 			response = handleAmbEmailIntent(intentReq, session);
 		}
 		//
-		else if(INTENT_CLASSES.equals(intentName)){
-			response = handleClassIntent(intentReq, session);
-		}
-		//
 		else if(INTENT_RATEMYPROFESSOR.equals(intentName)){
 			response = handleRateMyProfessor(intentReq, session);
 		}
@@ -218,6 +214,11 @@ public class KnockKnockConversation extends Conversation {
 		else if(INTENT_PROFESSOR_CLASSES.equals(intentName)){
 			response = handleProfessorClassesIntent(intentReq,session);
 		}
+		//
+		else if(INTENT_AMB_PROF_CLASSES.equals(intentName)){
+			response = handleAmbProfClassesIntent(intentReq,session);
+		}
+		//
 		else {
 			response = newTellResponse("<speak> Whatchu talkin' bout! </speak>", true);
 			cachedList = null;
@@ -316,6 +317,18 @@ public class KnockKnockConversation extends Conversation {
 		}
 		return response;
 	}
+
+	private SpeechletResponse handleAmbProfClassesIntent(IntentRequest intentReq, Session session){
+		SpeechletResponse response = null;
+		if(STATE_SPECIFY_NEED.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
+			response = ProfessorClassesIntentResponse(intentReq, session);
+		}
+		else
+		{
+			response = newTellResponse("<speak> You are a sad, strange little man, and you have my pity</speak>", true);
+		}
+		return response;
+	}
 	
 	private SpeechletResponse handleMoreInfoIntent(IntentRequest intentReq, Session session){
 		//If they have already gotten email/phone, give them the other.
@@ -323,13 +336,16 @@ public class KnockKnockConversation extends Conversation {
 		ProfContact pc = new ProfContact();
 		pc = cachedList.get(0);
 		if (STATE_GET_EMAIL.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
-			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s location or phone number? </speak> ", true, "I didn't catch that. Would you like their email or phone?", true);
+			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s location, phone number, or classes taught? </speak> ", true, "I didn't catch that. Would you like their email, phone, or classes?", true);
 		}
 		else if (STATE_GET_PHONE.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
-			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s email address or location? </speak> ", true, "I didn't catch that. Would you like their email or phone?", true);
+			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s email address, location, or classes taught? </speak> ", true, "I didn't catch that. Would you like their email, phone, or classes?", true);
 		}
 		else if (STATE_GET_LOCATION.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
-			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s email address or phone number? </speak> ", true, "I didn't catch that. Would you like their email or phone?", true);
+			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s email address, phone number, or classes taught? </speak> ", true, "I didn't catch that. Would you like their email, phone, or classes?", true);
+		}
+		else if (STATE_GET_PROF_CLASSES.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
+			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s email address, phone number, or location? </speak> ", true, "I didn't catch that. Would you like their email, phone, or location?", true);
 		}
 		else
 		{
@@ -445,6 +461,9 @@ public class KnockKnockConversation extends Conversation {
 				session.setAttribute(SESSION_PROF_STATE, STATE_GET_LOCATION);
 			}
 		}
+		else if (STATE_GET_PROF_CLASSES.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
+			response = ProfessorClassesIntentResponse(intentReq, session); // maybe make specific response in future
+		}
 		else
 		{
 			response = newTellResponse("<speak> Watchu talkin about willis? </speak>", true);
@@ -506,22 +525,6 @@ public class KnockKnockConversation extends Conversation {
 		return newTellResponse("<speak>" + professor + "has office hours Wednesdays at 8 AM. </speak>", true);
 		// return a tell response object within SpeechletResponse
 		// what is the difference between ask and tell (does alexa use both)
-	}
-
-	private SpeechletResponse classesTaughtIntent(IntentRequest intentReq, Session session)
-	{
-		Intent intent = intentReq.getIntent();
-		Map<String, Slot> slots = intent.getSlots();
-		Slot professorNameSlot = slots.get("ProfessorName");
-		SpeechletResponse response = null;
-		String professor = professorNameSlot.getValue();
-		String cs = "CS";
-		//check state
-		response = newTellResponse("<speak>" + professor + "is teaching " + "<say-as interpret-as=\"characters\">" + cs + "</say-as> 315 and " + "<say-as interpret-as=\"characters\">" + cs + "</say-as> 115 this semester" + ". </speak>", true);
-		cachedList = null;
-
-
-		return response;
 	}
 
 	private SpeechletResponse ContactInformationIntentResponse(IntentRequest intentReq, Session session){
@@ -633,6 +636,10 @@ public class KnockKnockConversation extends Conversation {
 			else if(STATE_GET_LOCATION.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0)
 			{
 				response = LocationIntentResponse(intentReq, session);
+			}
+			else if(STATE_GET_PROF_CLASSES.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0)
+			{
+				response = ProfessorClassesIntentResponse(intentReq, session);
 			}
 			else
 			{
