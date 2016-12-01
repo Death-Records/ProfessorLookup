@@ -1138,10 +1138,9 @@ public class KnockKnockConversation extends Conversation {
 				
 					Document doc = Jsoup.connect("http://www.ratemyprofessors.com/search.jsp?query=kooshesh").get();
 					String array = "";
-					/*
-					 * document.getElementById('username').value = 'foo';
-document.getElementById('login_form').submit();*/
-					//String x = doc.toString();
+					///
+					Document doc2 = Jsoup.connect("http://www.ratemyprofessors.com/campusRatings.jsp?sid=911").get();
+					
 					Elements links = doc.select("a");
 					for (Element link : links)
 					{
@@ -1168,16 +1167,9 @@ document.getElementById('login_form').submit();*/
 			    	{
 			    		String a = div.text();
 			    		div_texts += a;
-			    		//div_texts = div_texts.concat(div.outerHtml());
-			    		//Tag tag = div.tag();
-			    		//if (tag.getName().equalsIgnoreCase("div"))
-			    		//{
-			    			//div_texts += div.text();
-			    		//}
-			    		//String x = div.text();
-			    		//div_texts += "|" + x;
+			    		
 			    	}
-			    	String x = y.substring(0, 5);
+
 			    	// reset parser for professor's page
 			    	parser.setUp(y);
 			    	String quality = parser.findDivTag("Overall Quality").trim();
@@ -1186,78 +1178,9 @@ document.getElementById('login_form').submit();*/
 			    	parser.setUp(y);
 			    	String level_of_difficulty = parser.findDivTag("Level of Difficulty").trim();
 			    	parser.findDivTag("Overall Quality").trim();
-			    	String report = "Kooshesh's information on rate my professors" + " Overall Quality is " + quality + " Would Take Again is " + would_take_again + " Level of Difficulty " + level_of_difficulty;
+			    	String report = "Kooshesh's information on rate my professors" + " Overall Quality is " + quality + " Would Take Again is " + would_take_again + " Level of Difficulty is " + level_of_difficulty;
 			    	
 			    	return newTellResponse(report,false);
-					// works on this url
-					// doesn't work on the url it is supposed to use
-					// both urls work if they are put into a web brouser
-					/*String full_url = "http://www.ratemyprofessors.com/ShowRatings.jsp?tid=62598";//"https://moonlight.cs.sonoma.edu/api/v1/directory/person/?format=json&search=kooshesh";//"http://www.ratemyprofessors.com/";// + relative_url;
-					String y = "";
-					try
-					{
-
-						StringBuilder result = new StringBuilder();
-						//Create url to correctly encode url (i.e. spaces become %20)
-
-						URL url2 = new URL(full_url);
-						//Make Http Connection
-						HttpURLConnection conn = (HttpURLConnection) url2.openConnection();
-						//Request to get for information
-						conn.setRequestMethod("GET");
-						//Read the http response into a BufferReader
-						//BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-						//String line;
-						//while ((line = rd.readLine()) != null)
-						//{
-							//result.append(line);
-						//}
-						//End connection
-						//rd.close();
-						conn.disconnect();
-						y = result.toString();
-						return newTellResponse(y, false);
-
-					
-					}*/
-					//Catches in case of errors
-					/*catch (JSONException e)
-					{
-						ProfContact pc = new ProfContact();			
-						pc.setPhone(e.toString());
-
-					}*/
-					/*
-					catch(IOException e)
-					{
-						ProfContact pc = new ProfContact();			
-						pc.setPhone(e.toString());
-					}*/
-			    
-			    
-			    
-			    
-			    
-					// have not tried
-			    		// perhaps try to find a way to get the entire html code
-			    			// string may be too long to display
-			    		// can try to assume the information is there but it has to be found
-			    			// will not be able to tell these apart
-			    			// info is not there
-			    			// algorithm is wrong
-					// need help
-					// can't use div_texts directly
-					// adding div_text.charAt(1) changes x to 194
-					//x += div_texts.charAt(0);// + div_texts.charAt(1);
-			    
-					//BufferedReader rd = new BufferedReader(doc);
-					//String line;
-					//while ((line = doc.) != null)
-					//{
-						//result.append(line);
-					//}
-					//End connection
-					//rd.close();
 				
 				}
 				catch (IOException e)
