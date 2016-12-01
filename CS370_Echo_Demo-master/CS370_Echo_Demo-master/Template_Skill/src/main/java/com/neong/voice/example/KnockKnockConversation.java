@@ -22,6 +22,7 @@ import java.util.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.parser.Tag;
 import org.jsoup.select.Elements;
 
 import java.net.*;
@@ -1307,46 +1308,68 @@ public class KnockKnockConversation extends Conversation {
 			                              .get();
 */
 			try {
-				// opens and closes file http://stackoverflow.com/questions/14302886/closing-jsoup-connection
+					// opens and closes file http://stackoverflow.com/questions/14302886/closing-jsoup-connection
 				
-				Document doc = Jsoup.connect("http://www.ratemyprofessors.com/search.jsp?query=kooshesh").get();
-				String array = "";
-
-				//String x = doc.toString();
-				Elements links = doc.select("a");
-			    for (Element link : links) {
-			        String foundUrl = link.attr("href");
+					Document doc = Jsoup.connect("http://www.ratemyprofessors.com/search.jsp?query=kooshesh").get();
+					String array = "";
+					///
+					Document doc2 = Jsoup.connect("http://www.ratemyprofessors.com/campusRatings.jsp?sid=911").get();
+					
+					Elements links = doc.select("a");
+					for (Element link : links)
+					{
+						String foundUrl = link.attr("href");
 
 			        	array += " " + foundUrl;
 
-			    }
-			    //Parser parser = new Parser();
+					}
+					
+					Parser parser = new Parser();
 			    
-			    //parser.setUp(array);
-			    //String relative_url = parser.findRelativeURL();
+					parser.setUp(array);
+					
+					// gets the showrating attribute
+					String relative_url = parser.findRelativeURL();
+					
+			    	Document page = Jsoup.connect("http://www.ratemyprofessors.com/" + relative_url).get();
+			    	String y = page.html();
+			    	
+			    	Elements divs = page.select("div");
+			    	String div_texts = "";
 
-				return newTellResponse(array, false);
-				//BufferedReader rd = new BufferedReader(doc);
-				//String line;
-				//while ((line = doc.) != null)
-				//{
-					//result.append(line);
-				//}
-				//End connection
-				//rd.close();
+			    	for(Element div: divs)
+			    	{
+			    		String a = div.text();
+			    		div_texts += a;
+			    		
+			    	}
+
+			    	// reset parser for professor's page
+			    	parser.setUp(y);
+			    	String quality = parser.findDivTag("Overall Quality").trim();
+			    	parser.setUp(y);
+			    	String would_take_again = parser.findDivTag("Would Take Again").trim();
+			    	parser.setUp(y);
+			    	String level_of_difficulty = parser.findDivTag("Level of Difficulty").trim();
+			    	parser.findDivTag("Overall Quality").trim();
+			    	String report = "Kooshesh's information on rate my professors" + " Overall Quality is " + quality + " Would Take Again is " + would_take_again + " Level of Difficulty is " + level_of_difficulty;
+			    	
+			    	return newTellResponse(report,false);
 				
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				//e.printStackTrace();
-				return newTellResponse("failed", false);
-			}
-			//Elements newsHeadlines = doc.select("#mp-itn b a");
-			   // use html parser of JSoup to extract content
+				}
+				catch (IOException e)
+				{
+					// TODO Auto-generated catch block
+					//e.printStackTrace();
+					return newTellResponse("failed", false);
+				}
+				//Elements newsHeadlines = doc.select("#mp-itn b a");
+			   	// use html parser of JSoup to extract content
 
-			//} catch (IOException e) {
-			  // e.printStackTrace();
-			//}
-		//return newTellResponse("", false);
+				//} catch (IOException e) {
+			  	// e.printStackTrace();
+				//}
+			//return newTellResponse("", false);
 		
-	}
+		}
 }

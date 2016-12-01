@@ -6,49 +6,60 @@ public class Parser {
     private Integer j;
 
     public Integer getI() {
-        return this.j;
+        return j;
     }
 
     public void setUp(String stream_in) {
-        this.stream = stream_in;
-        this.j = 0;
+        stream = stream_in;
+        j = 0;
+    }
+    public void addToI(Integer x) {
+        j = j + x;
     }
 
     public Boolean atEnd(String end_string, Integer i) {
         String x = "";
-        return (x = x + this.stream.charAt(i)) == end_string;
+        x += stream.charAt(i);
+        return x.equals(end_string);
     }
 
     public String collectToEnd(String end_string, Integer i) {
-        String collected_characters = "";
-        while (!this.atEnd(end_string, i).booleanValue()) {
-            collected_characters = collected_characters + this.stream.substring(i, i + 1);
-            Integer n = this.j;
-            Integer n2 = this.j = Integer.valueOf(this.j + 1);
-            n = i;
-            n2 = i = Integer.valueOf(i + 1);
+
+    	String collected_characters = "";
+        
+        for(;!atEnd(end_string, i); i++)
+        {
+        
+            collected_characters += stream.substring(i, i + 1);
         }
+
         return collected_characters;
     }
 
     public String findRelativeURL() {
-        Integer k = this.findLocation("ShowRatings.jsp");
-        Integer length = this.stream.length();
-        return this.collectToEnd(" ", k);
+
+        Integer k = findLocation("ShowRatings.jsp");
+
+        return collectToEnd(" ", k);
     }
 
     public Integer findLocation(String url_to_match) {
-        Integer j = this.getI();
-        for (int k = 0; k < this.stream.length(); ++k) {
-            if (this.stream.substring(j, j + url_to_match.length()).equals(url_to_match)) {
+        Integer j = getI();
+        for (int k = 0; k < stream.length(); k++) {
+            if (stream.substring(j, j + url_to_match.length()).equals(url_to_match)) {
                 return j;
             }
-            Integer n = j;
-            Integer n2 = j = Integer.valueOf(j + 1);
+           j++;
         }
         return -1;
     }
-
+    public String findDivTag(String label) {
+        Integer x = findLocation(label);
+        addToI(x);
+        Integer y = findLocation(">");
+        y = y + 1;
+        return collectToEnd("<", y);
+    }
     public void getresultsPage() {
         String relative_url = this.findRelativeURL();
     }
