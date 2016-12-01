@@ -60,7 +60,6 @@ public class KnockKnockConversation extends Conversation {
 	private final static String INTENT_CONTACTINFO = "ContactInformationIntent"; // 2
 	private final static String INTENT_PHONE_NUMBER = "ContactInformationPhoneIntent"; // 3
 	private final static String INTENT_EMAIL_ADDRESS = "ContactInformationEmailIntent"; // 4
-	private final static String INTENT_CLASSES = "ClassesTaughtIntent"; // 5
 	private final static String INTENT_COMBO = "ContactInformationComboIntent"; // 6
 	private final static String INTENT_CLARIFY_PROF = "ProfessorNameIntent"; // 7
 	private final static String INTENT_YES = "AMAZON.YesIntent"; // 8
@@ -74,7 +73,10 @@ public class KnockKnockConversation extends Conversation {
 	private final static String INTENT_AMB_LOCATION = "AmbLocationIntent"; // 16
 	private final static String INTENT_AMB_PHONE = "AmbPhoneIntent"; // 17
 	private final static String INTENT_AMB_EMAIL = "AmbEmailIntent"; // 18
+	private final static String INTENT_AMB_PROF_CLASSES = "AmbProfClassesIntent";
 	private final static String INTENT_RATEMYPROFESSOR = "RateMyProfessorIntent";
+	private final static String INTENT_PROFESSOR_CLASSES = "ProfClassesIntent";
+	private final static String INTENT_DEPARTMENT_CLASSES = "DepartmentClassesIntent";
 	
 	//State keys 
 	private final static Integer STATE_GET_PROFESSOR = 2;
@@ -85,7 +87,8 @@ public class KnockKnockConversation extends Conversation {
 	private final static Integer STATE_GET_JOKE = 7;
 	private final static Integer STATE_GET_LOCATION = 8;
 	private final static Integer STATE_SPECIFY_NEED = 9; //known professor, unknown desired info
-
+	private final static Integer STATE_GET_PROF_CLASSES = 10;
+			
 	//Session state storage key
 	private final static String SESSION_PROF_STATE = "profState";
 	private final static String SESSION_PROF_STATE_2 = "profState2"; //need it because in ambiguous state, still need to store email, phone, email_phone state
@@ -97,7 +100,6 @@ public class KnockKnockConversation extends Conversation {
 		supportedIntentNames.add(INTENT_CONTACTINFO);
 		supportedIntentNames.add(INTENT_PHONE_NUMBER);
 		supportedIntentNames.add(INTENT_EMAIL_ADDRESS);
-		supportedIntentNames.add(INTENT_CLASSES);
 		supportedIntentNames.add(INTENT_COMBO);
 		supportedIntentNames.add(INTENT_CLARIFY_PROF);
 		supportedIntentNames.add(INTENT_YES);
@@ -111,7 +113,9 @@ public class KnockKnockConversation extends Conversation {
 		supportedIntentNames.add(INTENT_AMB_LOCATION);
 		supportedIntentNames.add(INTENT_AMB_PHONE);
 		supportedIntentNames.add(INTENT_AMB_EMAIL);
+		supportedIntentNames.add(INTENT_AMB_PROF_CLASSES);
 		supportedIntentNames.add(INTENT_RATEMYPROFESSOR);
+		supportedIntentNames.add(INTENT_PROFESSOR_CLASSES);
 
 	}
 
@@ -205,12 +209,16 @@ public class KnockKnockConversation extends Conversation {
 			response = handleAmbEmailIntent(intentReq, session);
 		}
 		//
-		else if(INTENT_CLASSES.equals(intentName)){
-			response = handleClassIntent(intentReq, session);
-		}
-		//
 		else if(INTENT_RATEMYPROFESSOR.equals(intentName)){
 			response = handleRateMyProfessor(intentReq, session);
+		}
+		//
+		else if(INTENT_PROFESSOR_CLASSES.equals(intentName)){
+			response = handleProfessorClassesIntent(intentReq,session);
+		}
+		//
+		else if(INTENT_AMB_PROF_CLASSES.equals(intentName)){
+			response = handleAmbProfClassesIntent(intentReq,session);
 		}
 		//
 		else {
@@ -311,6 +319,18 @@ public class KnockKnockConversation extends Conversation {
 		}
 		return response;
 	}
+
+	private SpeechletResponse handleAmbProfClassesIntent(IntentRequest intentReq, Session session){
+		SpeechletResponse response = null;
+		if(STATE_SPECIFY_NEED.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
+			response = ProfessorClassesIntentResponse(intentReq, session);
+		}
+		else
+		{
+			response = newTellResponse("<speak> You are a sad, strange little man, and you have my pity</speak>", true);
+		}
+		return response;
+	}
 	
 	private SpeechletResponse handleMoreInfoIntent(IntentRequest intentReq, Session session){
 		//If they have already gotten email/phone, give them the other.
@@ -318,13 +338,16 @@ public class KnockKnockConversation extends Conversation {
 		ProfContact pc = new ProfContact();
 		pc = cachedList.get(0);
 		if (STATE_GET_EMAIL.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
-			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s location or phone number? </speak> ", true, "I didn't catch that. Would you like their email or phone?", true);
+			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s location, phone number, or classes taught? </speak> ", true, "I didn't catch that. Would you like their email, phone, or classes?", true);
 		}
 		else if (STATE_GET_PHONE.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
-			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s email address or location? </speak> ", true, "I didn't catch that. Would you like their email or phone?", true);
+			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s email address, location, or classes taught? </speak> ", true, "I didn't catch that. Would you like their email, phone, or classes?", true);
 		}
 		else if (STATE_GET_LOCATION.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
-			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s email address or phone number? </speak> ", true, "I didn't catch that. Would you like their email or phone?", true);
+			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s email address, phone number, or classes taught? </speak> ", true, "I didn't catch that. Would you like their email, phone, or classes?", true);
+		}
+		else if (STATE_GET_PROF_CLASSES.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
+			response = newAskResponse (" <speak> Would you like " + pc.getName() + "'s email address, phone number, or location? </speak> ", true, "I didn't catch that. Would you like their email, phone, or location?", true);
 		}
 		else
 		{
@@ -440,6 +463,9 @@ public class KnockKnockConversation extends Conversation {
 				session.setAttribute(SESSION_PROF_STATE, STATE_GET_LOCATION);
 			}
 		}
+		else if (STATE_GET_PROF_CLASSES.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0){
+			response = ProfessorClassesIntentResponse(intentReq, session); // maybe make specific response in future
+		}
 		else
 		{
 			response = newTellResponse("<speak> Watchu talkin about willis? </speak>", true);
@@ -501,22 +527,6 @@ public class KnockKnockConversation extends Conversation {
 		return newTellResponse("<speak>" + professor + "has office hours Wednesdays at 8 AM. </speak>", true);
 		// return a tell response object within SpeechletResponse
 		// what is the difference between ask and tell (does alexa use both)
-	}
-
-	private SpeechletResponse classesTaughtIntent(IntentRequest intentReq, Session session)
-	{
-		Intent intent = intentReq.getIntent();
-		Map<String, Slot> slots = intent.getSlots();
-		Slot professorNameSlot = slots.get("ProfessorName");
-		SpeechletResponse response = null;
-		String professor = professorNameSlot.getValue();
-		String cs = "CS";
-		//check state
-		response = newTellResponse("<speak>" + professor + "is teaching " + "<say-as interpret-as=\"characters\">" + cs + "</say-as> 315 and " + "<say-as interpret-as=\"characters\">" + cs + "</say-as> 115 this semester" + ". </speak>", true);
-		cachedList = null;
-
-
-		return response;
 	}
 
 	private SpeechletResponse ContactInformationIntentResponse(IntentRequest intentReq, Session session){
@@ -628,6 +638,10 @@ public class KnockKnockConversation extends Conversation {
 			else if(STATE_GET_LOCATION.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0)
 			{
 				response = LocationIntentResponse(intentReq, session);
+			}
+			else if(STATE_GET_PROF_CLASSES.compareTo((Integer)session.getAttribute(SESSION_PROF_STATE)) == 0)
+			{
+				response = ProfessorClassesIntentResponse(intentReq, session);
 			}
 			else
 			{
@@ -811,7 +825,7 @@ public class KnockKnockConversation extends Conversation {
 		// they don't have a location
 		else
 		{
-			response = newAskResponse("<speak> " + pc.getName() + "is in the eternal ether" + " . Would you like me to repeat that or give you more info on " + pc.getName() + "? </speak>", true, "<speak>I didn't catch that, would you like me to repeat their location or give you more info?</speak>", true);
+			response = newAskResponse("<speak> " + pc.getName() + " is in the eternal ether" + " . Would you like me to repeat that or give you more info on " + pc.getName() + "? </speak>", true, "<speak>I didn't catch that, would you like me to repeat their location or give you more info?</speak>", true);
 			session.setAttribute(SESSION_PROF_STATE, STATE_GET_LOCATION);
 		}
 		return response;
@@ -845,7 +859,7 @@ public class KnockKnockConversation extends Conversation {
 
 			session.setAttribute(SESSION_PROF_STATE, STATE_GET_LOCATION);
 			session.setAttribute(SESSION_PROF_STATE_2, STATE_AMBIGUOUS_PROF);
-			response = newAskResponse("<speak> Did you mean" + list + "say first name and last name  please </speak>", false, "<speak> Did you mean, " + list + "</speak>", false);
+			response = newAskResponse("<speak> Did you mean" + list + " say first name and last name  please </speak>", false, "<speak> Did you mean, " + list + "</speak>", false);
 		}
 		else
 		{
@@ -855,6 +869,78 @@ public class KnockKnockConversation extends Conversation {
 		session.setAttribute(SESSION_PROF_STATE, STATE_GET_LOCATION);
 		return response;
 
+	}
+	
+	private SpeechletResponse ProfessorClassesIntentResponse(IntentRequest intentReq, Session session)
+	{//Should list class names
+		ProfContact pc = new ProfContact();
+		SpeechletResponse response = null;
+		pc = cachedList.get(0);
+		getClassesFromProf(pc);
+		// they have classes
+		if(classList.size() > 0)
+		{
+			String list ="";
+			int i = 0;
+			while(i < classList.size())
+			{
+				String s = classList.get(i).getClassName();
+				// if 
+				if(i == classList.size()-1)
+
+					list = list + " and " + s;
+				else
+					list = list + ", " + s;
+				i++;
+			}
+			response = newAskResponse("<speak> " + pc.getName() + " teaches " + list + " . Would you like me to repeat that or give you more info on " + pc.getName() + "? </speak>", true, "<speak>I didn't catch that, would you like me to repeat their classes or give you more info?</speak>", true);
+			session.setAttribute(SESSION_PROF_STATE, STATE_GET_PROF_CLASSES);
+		}
+		// they don't have classes
+		else
+		{
+			response = newAskResponse("<speak> " + pc.getName() + " doesn't seem to be teaching any classes at the moment" + " . Would you like me to give you more info on " + pc.getName() + " or tell a joke? </speak>", true, "<speak>I didn't catch that, would you like me to give you more info or tell a joke?</speak>", true);
+			session.setAttribute(SESSION_PROF_STATE, STATE_GET_PROF_CLASSES);
+		}
+		return response;
+	}
+	
+	private SpeechletResponse handleProfessorClassesIntent(IntentRequest intentReq, Session session)
+	{
+		Intent class_intent = intentReq.getIntent();
+		String professor_name = class_intent.getSlots().get("ProfessorName").getValue();
+		ProfContact pc = new ProfContact();
+		SpeechletResponse response = null;
+		
+		if(professor_name != null && !professor_name.isEmpty())
+			//we have prof name
+		{
+			try
+			{
+				GetEmailPhone(professor_name);
+			}
+			catch (ClassNotFoundException | SQLException e)
+			{	// TODO Auto-generated catch block
+				pc.setPhone(e.toString());
+			}
+		}
+		// will get a list of professors with building names
+		// narrow list down
+		if(cachedList.size() > 1)
+		{
+			String list = makeListOfDistinctProfessors(session);
+
+			session.setAttribute(SESSION_PROF_STATE, STATE_GET_PROF_CLASSES);
+			session.setAttribute(SESSION_PROF_STATE_2, STATE_AMBIGUOUS_PROF);
+			response = newAskResponse("<speak> Did you mean" + list + " say first name and last name  please </speak>", false, "<speak> Did you mean, " + list + "</speak>", false);
+		}
+		else
+		{
+
+			response = ProfessorClassesIntentResponse(intentReq, session);
+		}
+		session.setAttribute(SESSION_PROF_STATE, STATE_GET_PROF_CLASSES);
+		return response;
 	}
 
 	private SpeechletResponse handleJokeIntent(IntentRequest intentReq, Session session)
@@ -1112,8 +1198,101 @@ public class KnockKnockConversation extends Conversation {
 		return;
 	}
 	
+	private void getClassesFromDept(String department){
+		Connection con = null;
+		String sql = "";
+		Classes c = new Classes();
+		try{
+			byte[] bits = new byte[]{88, 116, 108, 97, 116, 105, 108, 112, 97, 53};
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			con = DriverManager.getConnection("jdbc:mysql://cwolf.cs.sonoma.edu:3306/restrella?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=PST", "restrella", new String(bits,"UTF-8"));
+			Statement stmnt = con.createStatement();
+			
+			if(department != null) 
+				sql = "SELECT * FROM Classes WHERE ShortDept LIKE '" + department + "' OR Dept LIKE '" + department + "'";
+			stmnt = con.createStatement();
+			ResultSet rs = stmnt.executeQuery(sql);
+			String s;
+			int x;
+			boolean b;
+			float f;
+			
+			while(rs.next()){
+				x = rs.getInt(0);
+				if(!rs.wasNull()){
+					c.setId(x);
+				}
+				s = rs.getString(1);
+				if(!rs.wasNull()){
+					c.setShortDept(s);
+				}
+				s = rs.getString(2);
+				if(!rs.wasNull()){
+					c.setClassNum(s);
+				}
+				s = rs.getString(3);
+				if(!rs.wasNull()){
+					c.setDept(s);
+				}
+				s = rs.getString(4);
+				if(!rs.wasNull()){
+					c.setSection(s);
+				}
+				b = rs.getBoolean(5);
+				if(!rs.wasNull()){
+					c.setEth(b);
+				}
+				b = rs.getBoolean(6);
+				if(!rs.wasNull()){
+					c.setIsLab(b);
+				}
+				f = rs.getFloat(7);
+				if(!rs.wasNull()){
+					c.setUnits(f);
+				}
+				s = rs.getString(8);
+				if(!rs.wasNull()){
+					c.setGE(s);
+				}
+				s = rs.getString(9);
+				if(!rs.wasNull()){
+					c.setClassName(s);
+				}
+				s = rs.getString(10);
+				if(!rs.wasNull()){
+					c.setType(s);
+				}
+				s = rs.getString(11);
+				if(!rs.wasNull()){
+					//parse then add days
+					c.addDay(s);
+				}
+				s = rs.getString(12);
+				if(!rs.wasNull()){
+					if(s != "AMRR AMNGE")
+					c.setTime(s);
+				}
+				s = rs.getString(13);
+				if(!rs.wasNull()){
+					c.setInstructor(s);
+				}
+				classList.add(c);
+			}
+			return;
+		}	
+		catch (Exception e){
+			department = e.toString();
+		}
+		return;
+	}
+	
 	public SpeechletResponse handleRateMyProfessor(IntentRequest intentReq, Session session)
 	{
+		
+		Intent intent = intentReq.getIntent();
+		Map<String, Slot> slots = intent.getSlots();
+		Slot professorNameSlot = slots.get("ProfessorName");
+		String name = professorNameSlot.getValue();
 		//return newTellResponse("failed", false);
 
 		/*
@@ -1136,7 +1315,7 @@ public class KnockKnockConversation extends Conversation {
 			try {
 					// opens and closes file http://stackoverflow.com/questions/14302886/closing-jsoup-connection
 				
-					Document doc = Jsoup.connect("http://www.ratemyprofessors.com/search.jsp?query=kooshesh").get();
+					Document doc = Jsoup.connect("http://www.ratemyprofessors.com/search.jsp?query=" + name).get();
 					String array = "";
 					///
 					Document doc2 = Jsoup.connect("http://www.ratemyprofessors.com/campusRatings.jsp?sid=911").get();
@@ -1178,7 +1357,7 @@ public class KnockKnockConversation extends Conversation {
 			    	parser.setUp(y);
 			    	String level_of_difficulty = parser.findDivTag("Level of Difficulty").trim();
 			    	parser.findDivTag("Overall Quality").trim();
-			    	String report = "Kooshesh's information on rate my professors" + " Overall Quality is " + quality + " Would Take Again is " + would_take_again + " Level of Difficulty is " + level_of_difficulty;
+			    	String report = name +"'s information on rate my professors for" + " Overall Quality is " + quality + " for Would Take Again is " + would_take_again + " and for Level of Difficulty is " + level_of_difficulty;
 			    	
 			    	return newTellResponse(report,false);
 				
